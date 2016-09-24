@@ -1,0 +1,74 @@
+#!/usr/bin/env python
+import os
+import io
+import sys
+import urllib
+import urllib2
+import cookielib
+
+####################### SETTING ########################
+
+login_url = "http://judge.nccucs.org/Login"
+submit_url = "http://judge.nccucs.org/SubmitCode"
+
+cookiefile = 'cookie.txt'
+your_account = "User_name_fill_it_by_yourself"
+your_pw = "User_password_fill_it_by_yourself"
+
+####################### CHECK PARAMETER ################
+
+if len(sys.argv) != 2:
+    print "give me one file name as parameter"
+    quit()
+
+problemid = os.path.basename(os.getcwd())
+submit_file = sys.argv[1]
+ext = os.path.splitext(submit_file)[-1]
+
+if ext == '.c':
+    language = 'C'
+elif ext in ['.cpp' , '.C' , '.cc' , '.CPP' , '.cxx' , 
+        '.cp' , '.cc' , '.c++']:
+    language = 'C++'
+elif ext == '.java':
+    language = 'JAVA'
+else:
+    print 'cannot indentify file type'
+    quit()
+
+#user_agent = 'Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)'
+#unmark it if it's necessary
+
+####################### LOG IN #########################
+
+cookie = cookielib.MozillaCookieJar(cookiefile)
+opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookie))
+
+post_data = urllib.urlencode({"Account" : your_account , 
+        "UserPasswd" : your_pw })
+
+result = opener.open(login_url , post_data);
+cookie.save(ignore_discard=True , ignore_expires=True)
+
+####################### SUBMIT #########################
+
+code = io.open(submit_file , 'r' , encoding = 'UTF-8')
+
+submission_data = urllib.urlencode({
+    "language" : language , 
+    "code" : code.read() , 
+    "problemid" : problemid , 
+    })
+
+try:
+    result = opener.open(submit_url , submission_data);
+except urllib2.HTTPError , e:
+    print e.code
+    print e.reason
+else:
+    rtn = os.system("rm cookie.txt 2> /dev/null")
+    if rtn == 0:
+        print "remove cookie.txt"
+    else:
+        print "remove cookie.txt failed"
+    print "submit done!"
