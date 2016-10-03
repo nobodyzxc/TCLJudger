@@ -17,11 +17,15 @@ your_pw = "User_password_fill_it_by_yourself"
 
 ####################### CHECK PARAMETER ################
 
-if len(sys.argv) != 2:
-    print "give me one file name as parameter"
+if len(sys.argv) > 3 or len(sys.argv) < 2:
+    print "give me (one file name) || (one file name , one problem ID) as parameter"
     quit()
-
-problemid = os.path.basename(os.getcwd())
+    
+if len(sys.argv) == 2 :
+    problemid = os.path.basename(os.getcwd())
+else:
+    problemid = sys.argv[2]
+    
 submit_file = sys.argv[1]
 ext = os.path.splitext(submit_file)[-1]
 
@@ -71,4 +75,4 @@ else:
         print "remove cookie.txt"
     else:
         print "remove cookie.txt failed"
-    print "submit done!"
+    print "submit " + submit_file + " to " + problemid " done!"
