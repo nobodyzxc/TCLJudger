@@ -1,19 +1,18 @@
 #!/usr/bin/env python
-import os
-import io
-import sys
-import urllib
-import urllib2
-import cookielib
+import os , io , sys
+import urllib , urllib2
+import cookielib , getpass
 
 ####################### SETTING ########################
 
 login_url = "http://judge.nccucs.org/Login"
 submit_url = "http://judge.nccucs.org/SubmitCode"
 
-cookiefile = 'cookie.txt'
-your_account = "User_name_fill_it_by_yourself"
-your_pw = "User_password_fill_it_by_yourself"
+cookiefile = 'cookie_cj.txt'
+cookiefile = os.path.expanduser('~/bin/' + cookiefile)
+
+your_account = "" # stuff it or not
+your_pw = ""
 
 ####################### CHECK PARAMETER ################
 
@@ -39,6 +38,12 @@ elif ext == '.java':
 else:
     print 'cannot indentify file type'
     quit()
+
+if len(your_account) == 0:
+    your_account = raw_input("account:")
+
+if len(your_pw) == 0:
+    your_pw = getpass.getpass("password:")
 
 #user_agent = 'Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)'
 #unmark it if it's necessary
@@ -70,9 +75,4 @@ except urllib2.HTTPError , e:
     print e.code
     print e.reason
 else:
-    rtn = os.system("rm cookie.txt 2> /dev/null")
-    if rtn == 0:
-        print "remove cookie.txt"
-    else:
-        print "remove cookie.txt failed"
     print "submit " + submit_file + " to " + problemid + " done!"
