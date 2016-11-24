@@ -1,0 +1,161 @@
+#!/usr/bin/env python
+
+import os , io , sys
+import urllib , urllib2 , cookielib
+from HTMLParser import HTMLParser
+
+####################### SETTING ########################
+login_url = "http://zerojudge.tw/Login"
+submission_url = "http://zerojudge.tw/Submissions"
+cookiefile = 'cookie_zj.txt'
+your_account = "" # stuff your account here
+your_pw = "" # stuff your password here
+cookiefile = os.path.expanduser('~/bin/' + cookiefile)
+token_value = ""
+cookie_effect = False
+####################### PARSER ######################
+class InputParser(HTMLParser):
+    def __init__(self):
+        HTMLParser.__init__(self)
+        self.links = []
+        self.lastTag = ""
+        self.getToken = False
+    def handle_starttag(self , tag , attrs):
+        global token_value
+        self.lastTag = tag
+        if tag == "input" or tag == "INPUT":
+            for(attr , value) in attrs:
+                #print attr , ":" , value , " " , 
+                if attr == "name" and value == "token":
+                    self.getToken = True
+                if attr == "value" and self.getToken == True:
+                    token_value= value
+                    self.getToken = False
+            #print ""
+            #print "Token is " , token_value
+    #def handle_data(self , data):
+    #def handle_endtag(self , tag):
+
+class SubmissionParser(HTMLParser):
+    def __init__(self):
+        HTMLParser.__init__(self)
+        self.links = []
+        self.inTd = False
+        self.getData = False
+        self.lastTag = ""
+        self.judgement = False
+        self.type = 'N'
+        self.probName = ""
+    def handle_starttag(self , tag , attrs):
+        self.lastTag = tag
+        if tag == "td":
+            self.inTd = True
+            for(attr , value) in attrs:
+                if attr == 'style' and value == "font-size: smaller":
+                    self.getData = True #get submission time
+                    self.type = 'T'
+                if attr == 'width' and value == "38%":
+                    self.getData = True
+                    self.type = 'I' # prob Id ex: d208
+        if self.inTd == True:
+            if tag == "div":
+                for(attr , value) in attrs:
+                    if attr == 'class' and value == "SolutionCode":
+                        self.getData = True #code type JAVA CPP C PY and so on
+                        self.type = 'L'
+            if tag == "span":
+                for(attr , value) in attrs:
+                    if attr == 'id' and value == 'judgement':
+                        self.getData = True #get AC , CE , and so on
+                        self.judgement = True
+                        self.type = 'J'
+            if tag == "a":
+                for(attr , value) in attrs:
+                    if attr == 'href':
+                        if value.find("./UserStatistic?userid=") != -1:
+                            self.getData = True #get User name
+                            self.type = 'U'
+                        if value.find("./ShowProblem?problemid=") != -1:
+                            self.getData = True #get Prob name
+                            self.type = 'P'
+                        #if value.find("./Problems?tag=") != -1:
+                        #    self.getData = True #get Prob comment
+    def handle_data(self , data):
+        if self.getData == True:
+            if self.type == 'U':
+                print "%20s" %(data.strip()) , " " ,
+            elif self.type == 'P':
+                #print "%30s" %(data.strip()) , " " ,
+                self.probName = data.strip()
+
+            elif self.type == 'J':
+                self.type = 'j'# trim twice to avoid null <td><>d</></td>
+            elif self.type == 'j':
+                print "%3s" %(data.strip()) , " " , 
+
+            elif self.type == 'L':
+                print "%5s" %(data.strip()) , " " , 
+            elif self.type == 'I':
+                print "%4s" %(data.strip()) , " " ,
+            if self.judgement == False:
+                self.getData = False
+            if self.type == 'T':
+                print data.strip() , " " , self.probName
+                self.type = 'N'
+    def handle_endtag(self , tag):
+        if tag == 'td' and self.getData == True:
+            self.inTd = False
+        if tag == 'span' and self.judgement == True:
+            self.getData = False
+            self.judgement = False
+            global cookie_effect
+            cookie_effect = True
+
+#######################    MAIN   ######################
+
+if __name__ == '__main__':
+    cookieJar = cookielib.MozillaCookieJar()
+    while cookie_effect == False:
+        if os.path.exists(cookiefile):
+            cookieJar.load(cookiefile, ignore_discard=True, ignore_expires=True)
+            opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookieJar))
+        else:
+            print "Get new cookie"
+            cookieJar = cookielib.MozillaCookieJar(cookiefile)
+            opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookieJar))
+            login_page = opener.open(login_url)
+            IP = InputParser()
+            IP.feed(login_page.read())
+            info = login_page.info()
+            token = info.getheader('set-cookie')[0:43]
+            post_data = urllib.urlencode({
+                "account" : your_account  , 
+                "passwd" : your_pw ,
+                "returnPage" : "/Index" , 
+                "token" : token_value
+                })
+            opener.addheaders = [
+                    ('Host', 'zerojudge.tw') , 
+                    ('Connection', 'keep-alive') ,
+                    ('Cache-Control', 'max-age=0') , 
+                    ('Upgrade-Insecure-Requests', '1') , 
+                    ('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.99 Safari/537.36') , 
+                    ('Accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8') , 
+                    ('Referer', 'http://zerojudge.tw/Login') , 
+                    ('Accept-Encoding', 'gzip, deflate, sdch') , 
+                    ('Accept-Language', 'zh-CN,zh;q=0.8,zh-TW;q=0.6') , 
+                    ('Cookie', token)
+                    ]
+            result = opener.open(login_url , post_data);
+            cookieJar.save(ignore_discard=True , ignore_expires=True)
+            #print result.read()
+
+        #DOWN N PAESE
+        req = urllib2.Request(submission_url)
+        response = opener.open(req)
+        #print response.read()
+        SP = SubmissionParser()
+        SP.feed(response.read())
+        if cookie_effect == False:
+            os.system("rm " + cookiefile)
+            print "rmove previous cookie"
