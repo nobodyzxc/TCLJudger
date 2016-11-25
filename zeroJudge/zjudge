@@ -2,6 +2,7 @@
 import os , io , sys
 import urllib , urllib2 , cookielib
 import getpass
+from HTMLParser import HTMLParser
 
 ####################### SETTING ########################
 
@@ -13,6 +14,29 @@ cookiefile = os.path.expanduser('~/bin/' + cookiefile)
 
 your_account = "" # stuff your account here
 your_pw = "" # stuff your password here
+
+####################### PARSER ######################
+class InputParser(HTMLParser):
+    def __init__(self):
+        HTMLParser.__init__(self)
+        self.links = []
+        self.lastTag = ""
+        self.getToken = False
+    def handle_starttag(self , tag , attrs):
+        global token_value
+        self.lastTag = tag
+        if tag == "input" or tag == "INPUT":
+            for(attr , value) in attrs:
+                #print attr , ":" , value , " " , 
+                if attr == "name" and value == "token":
+                    self.getToken = True
+                if attr == "value" and self.getToken == True:
+                    token_value= value
+                    self.getToken = False
+            #print ""
+            #print "Token is " , token_value
+    #def handle_data(self , data):
+    #def handle_endtag(self , tag):
 
 ####################### CHECK PARAMETER ################
 
@@ -46,66 +70,71 @@ else:
 #user_agent = 'Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)'
 
 ####################### LOG IN #########################
-cookieJar = cookielib.MozillaCookieJar()
-if os.path.exists(cookiefile):
-    cookieJar.load(cookiefile, ignore_discard=True, ignore_expires=True)
-    opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookieJar))
-else:
-    if len(your_account) == 0:
-        your_account = raw_input("account:")
-    if len(your_pw) == 0:
-        your_pw = getpass.getpass("password:")
-    cookieJar = cookielib.MozillaCookieJar(cookiefile)
-    opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookieJar))
-    login_page = opener.open(login_url)
-    IP = InputParser()
-    IP.feed(login_page.read())
-    info = login_page.info()
-    token = info.getheader('set-cookie')[0:43]
-    post_data = urllib.urlencode({
-        "account" : your_account  , 
-        "passwd" :  your_pw ,
-        "returnPage" : "/Index" , 
-        "token" : token_value
+while True:
+    cookieJar = cookielib.MozillaCookieJar()
+    if os.path.exists(cookiefile):
+        cookieJar.load(cookiefile, ignore_discard=True, ignore_expires=True)
+        opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookieJar))
+    else:
+        if len(your_account) == 0:
+            your_account = raw_input("account:")
+        if len(your_pw) == 0:
+            your_pw = getpass.getpass("password:")
+        cookieJar = cookielib.MozillaCookieJar(cookiefile)
+        opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookieJar))
+        login_page = opener.open(login_url)
+        IP = InputParser()
+        IP.feed(login_page.read())
+        info = login_page.info()
+        token = info.getheader('set-cookie')[0:43]
+        post_data = urllib.urlencode({
+            "account" : your_account  , 
+            "passwd" :  your_pw ,
+            "returnPage" : "/Index" , 
+            "token" : token_value
+            })
+        opener.addheaders = [
+                ('Host', 'zerojudge.tw') , 
+                ('Connection', 'keep-alive') ,
+                ('Cache-Control', 'max-age=0') , 
+                ('Upgrade-Insecure-Requests', '1') , 
+                ('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.99 Safari/537.36') , 
+                ('Accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8') , 
+                ('Referer', 'http://zerojudge.tw/Login') , 
+                ('Accept-Encoding', 'gzip, deflate, sdch') , 
+                ('Accept-Language', 'zh-CN,zh;q=0.8,zh-TW;q=0.6') , 
+                ('Cookie', token)
+                ]
+        result = opener.open(login_url , post_data);
+        cookieJar.save(ignore_discard=True , ignore_expires=True)
+        #print result.read()
+
+    ####################### SUBMIT #########################
+
+    codeFile = io.open(submit_file , 'r' , encoding = 'UTF-8')
+    code = codeFile.read()
+
+    submission_data = urllib.urlencode({
+        "action" : "SubmitCode" , 
+        "language" : language , 
+        "code" : code , 
+        "problemid" : problemid , 
         })
-    opener.addheaders = [
-            ('Host', 'zerojudge.tw') , 
-            ('Connection', 'keep-alive') ,
-            ('Cache-Control', 'max-age=0') , 
-            ('Upgrade-Insecure-Requests', '1') , 
-            ('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.99 Safari/537.36') , 
-            ('Accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8') , 
-            ('Referer', 'http://zerojudge.tw/Login') , 
-            ('Accept-Encoding', 'gzip, deflate, sdch') , 
-            ('Accept-Language', 'zh-CN,zh;q=0.8,zh-TW;q=0.6') , 
-            ('Cookie', token)
-            ]
-    result = opener.open(login_url , post_data);
-    cookieJar.save(ignore_discard=True , ignore_expires=True)
-    #print result.read()
 
-####################### SUBMIT #########################
-
-codeFile = io.open(submit_file , 'r' , encoding = 'UTF-8')
-code = codeFile.read()
-
-submission_data = urllib.urlencode({
-    "action" : "SubmitCode" , 
-    "language" : language , 
-    "code" : code , 
-    "problemid" : problemid , 
-    })
-
-try:
-    result = opener.open(submit_url , submission_data);
-    print result.read()
-except urllib2.HTTPError , e:
-    print e.code
-    print e.reason
-else:
-    print "language : " , language
-    print "problemid : " , problemid
-    print "submitURL : " , submit_url
-    print "code : "
-    print code
-    print "submit done!"
+    try:
+        result = opener.open(submit_url , submission_data);
+        if result.read() != '{"uri":"/Submissions"}':
+            os.system("rm " + cookiefile)
+            print "rmove previous cookie"
+            continue
+    except urllib2.HTTPError , e:
+        print e.code
+        print e.reason
+    else:
+        print "language : " , language
+        print "problemid : " , problemid
+        print "submitURL : " , submit_url
+        print "code : "
+        print code
+        print "submit done!"
+        break

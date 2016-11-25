@@ -75,6 +75,9 @@ class SubmissionParser(HTMLParser):
                         self.type = 'J'
             if tag == "a":
                 for(attr , value) in attrs:
+                    if attr == "class" and value == "showcode":
+                        self.getData = True #code type JAVA CPP C PY and so on
+                        self.type = 'L'
                     if attr == 'href':
                         if value.find("./UserStatistic?userid=") != -1:
                             self.getData = True #get User name
@@ -92,13 +95,14 @@ class SubmissionParser(HTMLParser):
                 #print "%30s" %(data.strip()) , " " ,
                 self.probName = data.strip()
 
-            elif self.type == 'J':
-                self.type = 'j'# trim twice to avoid null <td><>d</></td>
-            elif self.type == 'j':
+            elif self.type == 'J' and data.strip() != "":
+                #self.type = 'j'# trim twice to avoid null <td><>d</></td>
+            #elif self.type == 'j' :
                 print "%3s" %(data.strip()) , " " , 
 
             elif self.type == 'L':
-                print "%5s" %(data.strip()) , " " , 
+                if data.strip() != "":
+                    print "%5s" %(data.strip()) , " " , 
             elif self.type == 'I':
                 print "%4s" %(data.strip()) , " " ,
             if self.judgement == False:
