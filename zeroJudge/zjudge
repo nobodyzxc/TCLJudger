@@ -9,6 +9,7 @@ from HTMLParser import HTMLParser
 login_url = "http://zerojudge.tw/Login"
 submit_url = "http://zerojudge.tw/Solution.api"
 
+os.system("if [ ! -d ~/bin ];then mkdir ~/bin; fi");
 cookiefile = 'cookie_zj.txt'
 cookiefile = os.path.expanduser('~/bin/' + cookiefile)
 

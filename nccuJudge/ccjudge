@@ -8,6 +8,7 @@ import cookielib , getpass
 login_url = "http://judge.nccucs.org/Login"
 submit_url = "http://judge.nccucs.org/SubmitCode"
 
+os.system("if [ ! -d ~/bin ];then mkdir ~/bin; fi");
 cookiefile = 'cookie_cj.txt'
 cookiefile = os.path.expanduser('~/bin/' + cookiefile)
 
