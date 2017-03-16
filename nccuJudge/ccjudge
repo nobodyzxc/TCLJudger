@@ -20,18 +20,19 @@ your_pw = ""
 if len(sys.argv) > 3 or len(sys.argv) < 2:
     print "give me (one file name) || (one file name , one problem ID) as parameter"
     quit()
-    
+
 if len(sys.argv) == 2 :
-    problemid = os.path.basename(os.getcwd())
+    problemid = os.path.splitext(submit_file)[0] # filename
+    # dirname os.path.basename(os.getcwd())
 else:
     problemid = sys.argv[2]
-    
+
 submit_file = sys.argv[1]
 ext = os.path.splitext(submit_file)[-1]
 
 if ext == '.c':
     language = 'C'
-elif ext in ['.cpp' , '.C' , '.cc' , '.CPP' , '.cxx' , 
+elif ext in ['.cpp' , '.C' , '.cc' , '.CPP' , '.cxx' ,
         '.cp' , '.cc' , '.c++']:
     language = 'C++'
 elif ext == '.java':
@@ -54,7 +55,7 @@ if len(your_pw) == 0:
 cookie = cookielib.MozillaCookieJar(cookiefile)
 opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookie))
 
-post_data = urllib.urlencode({"Account" : your_account , 
+post_data = urllib.urlencode({"Account" : your_account ,
         "UserPasswd" : your_pw })
 
 result = opener.open(login_url , post_data);
@@ -65,9 +66,9 @@ cookie.save(ignore_discard=True , ignore_expires=True)
 code = io.open(submit_file , 'r' , encoding = 'UTF-8')
 
 submission_data = urllib.urlencode({
-    "language" : language , 
-    "code" : code.read() , 
-    "problemid" : problemid , 
+    "language" : language ,
+    "code" : code.read() ,
+    "problemid" : problemid ,
     })
 
 try:
