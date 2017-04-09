@@ -1,9 +1,14 @@
 # TCLJudger
-It's a html request application
 
-It will take your file name [ or 2nd parameter ] as problem ID  ,
+For those who live on TCL.
+
+Submit your oj code by TCL , without open the browser
+
+The program will take your file name [ or 2nd parameter ] as problem ID  ,
 first parameter as submit file
 
-\*judge file [ problem id ]       => submit code
+ccjudge file [ problem id ]       => submit code
 
-\*state                           => check submission
+ccstate                           => check submission and your score
+
+UPDATE : zjudge has broken , becuase of the modification of header.
